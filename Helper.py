@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import datetime
 import copy
-from sklearn.svm import SVC
-from sklearn.model_selection import GridSearchCV
 from sklearn.utils import resample
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -20,10 +18,7 @@ def prepare_dataset(scaler, labeler, dataset):
   X = scaler.fit_transform(dataset)
   return X, y
 
-def get_SVC(gpu):
-  return SVC() if not gpu else None
-
-def bootstrap_trials(n_trials, name, params, X, y, verbose=True, gpu=False):
+def bootstrap_trials(base_model, n_trials, name, X, y, verbose=True):
   models = []
   # code for stable randomization
   code = name.encode('utf-8')
@@ -35,12 +30,11 @@ def bootstrap_trials(n_trials, name, params, X, y, verbose=True, gpu=False):
   for i in range(n_trials):
     trial_start = datetime.datetime.now()
     trial_X, trial_y = resample(X, y, random_state=code+i)
-    trial_SVC = get_SVC(gpu)
-    trial_CV = GridSearchCV(trial_SVC, params, n_jobs=-1, cv=5)
-    trial_CV.fit(trial_X, trial_y)
-    print("\rTrial:", i + 1, "Time:", str(datetime.datetime.now() - trial_start), "Total:", str(datetime.datetime.now() - start_time), end='')
-    models.append(trial_CV)
-  print("\nElapsed Time:", str(datetime.datetime.now() - start_time))
+    model = copy.deepcopy(base_model)
+    model.fit(trial_X, trial_y)
+    if verbose: print("\rTrial:", i + 1, "Time:", str(datetime.datetime.now() - trial_start), "Total:", str(datetime.datetime.now() - start_time), end='')
+    models.append(model)
+  if verbose: print("\nElapsed Time:", str(datetime.datetime.now() - start_time))
   return models
 
 def save_to_csv(name, accuracies, f1_scores, save_folder):
@@ -81,7 +75,7 @@ def get_CIs(scores, CONFIDENCE=95):
     np.percentile(scores, high_percentile)
 
 
-def full_run(trials, name, params, folder, save_folder, verbose=True, gpu=False):
+def full_run(base_model, trials, name, folder, save_folder, verbose=True):
   print(name)
   train, test = load_dataset(folder)
 
@@ -90,7 +84,7 @@ def full_run(trials, name, params, folder, save_folder, verbose=True, gpu=False)
   X, y = prepare_dataset(scaler, labeler, train)
   X_test, y_test = prepare_dataset(scaler, labeler, test)
 
-  models = bootstrap_trials(trials, name, params, X, y, verbose, gpu)
+  models = bootstrap_trials(base_model, trials, name, X, y, verbose)
   accuracies, scores = evaluate_models(models, name, X_test, y_test, save_folder)
   lo_acc, mid_acc, hi_acc = get_CIs(accuracies)
   lo_f1, mid_f1, hi_f1 = get_CIs(scores)
