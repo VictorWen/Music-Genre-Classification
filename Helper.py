@@ -21,9 +21,8 @@ def prepare_dataset(scaler, labeler, dataset):
 def bootstrap_trials(base_model, n_trials, name, X, y, verbose=True):
   models = []
   # code for stable randomization
-  code = name.encode('utf-8')
-  code = int.from_bytes(code, byteorder="big")
-  code %= int(1E6) + 13
+  mod = int(1E6) + 7
+  code = (hash(name) ^ mod) % mod
 
   start_time = datetime.datetime.now()
   if verbose: print("Starting")
