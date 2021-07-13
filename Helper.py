@@ -39,12 +39,11 @@ def bootstrap_trials(base_model, n_trials, name, X, y, verbose=True):
   return models
 
 
-def save_to_csv(name, accuracies, f1_scores, save_folder):
+def save_to_csv(name, rows, save_folder):
   with open(save_folder + "/" + name, "w+") as file:
     writer = csv.writer(file)
-    writer.writerow(accuracies)
-    writer.writerow(f1_scores)
-
+    for row in rows:
+      writer.writerow(row)
 
 def parent_accuracy(test_y, predict, indicators):
   parent_y = np.zeros(test_y.shape)
@@ -69,7 +68,7 @@ def evaluate_models(models, name, test_X, test_y, indicators, save_folder):
     accuracies.append(accuracy)
     f1_scores.append(f1)
     parent_scores.append(parent)
-  save_to_csv(name + '.csv', accuracies, f1_scores, save_folder)
+  save_to_csv(name + '.csv', [accuracies, f1_scores, parent_scores], save_folder)
   return accuracies, f1_scores, parent_scores
 
 
