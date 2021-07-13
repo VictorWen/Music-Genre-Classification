@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 import csv
 import math
 
+
 def load_dataset(folder):
   train = pd.read_csv(folder + "/train.csv", index_col = 0)
   test = pd.read_csv(folder + "/test.csv", index_col = 0)
@@ -45,6 +46,7 @@ def save_to_csv(name, rows, save_folder):
     for row in rows:
       writer.writerow(row)
 
+
 def parent_accuracy(test_y, predict, indicators):
   parent_y = np.zeros(test_y.shape)
   parent_predict = np.zeros(predict.shape)
@@ -79,7 +81,7 @@ def read_from_csv(name, save_folder):
     rows = []
     for row in reader:
       rows.append(row)
-  return rows[0], rows[1]
+  return rows[0], rows[1], rows[2]
 
 
 def get_CIs(scores, CONFIDENCE=95):
