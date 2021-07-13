@@ -4,27 +4,27 @@ import datetime
 import copy
 
 
-def hierarchical_taxonomy(X, y, indicators, labels = None):
+def hierarchical_taxonomy(labeler, X, y, indicators, labels = None):
     if labels == None:
         label = range(0, len(indicators))
     conditions = []
     for indicator in indicators:
-        conditions.append(y.isin(indicator))
+        indicator = labeler.transform(indicator)
+        conditions.append(np.isin(y, indicator))
     parent_y = np.select(conditions, labels)
     child_y = []
     child_X = []
-    for i, condition in enumerate(conditions):
-        child_y.append([])
-        child_X.append([])
-        child_y[i] = y[condition]
-        child_X[i] = X[condition]
+    for condition in conditions:
+        child_y.append(y[condition])
+        child_X.append(X[condition])
     return parent_y, child_y, child_X
 
 
 class HierarchicalClassifier:    
     
-    def __init__(self, indicators, base_algorithm, labels = None, cv = True):
+    def __init__(self, labeler, indicators, base_algorithm, labels = None, cv = True):
         self.roots = len(indicators)
+        self.labeler = labeler
         self.indicators = indicators
         self.labels = labels
         self.algorithms = []
@@ -35,7 +35,7 @@ class HierarchicalClassifier:
         self.parent_algorithm = copy.deepcopy(base_algorithm)
     
     def fit(self, X, y):
-        parent_y, child_y, child_X = hierarchical_taxonomy(X, y, self.indicators, labels = self.labels)
+        parent_y, child_y, child_X = hierarchical_taxonomy(self.labeler, X, y, self.indicators, labels = self.labels)
         self.parent_algorithm.fit(X, parent_y)
         if self.cv:
             self.parent_algorithm = self.parent_algorithm.best_estimator_

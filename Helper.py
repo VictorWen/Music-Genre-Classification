@@ -75,12 +75,13 @@ def get_CIs(scores, CONFIDENCE=95):
     np.percentile(scores, high_percentile)
 
 
-def full_run(base_model, trials, name, folder, save_folder, verbose=True, save_rate=-1):
+def full_run(base_model, trials, name, folder, save_folder, verbose=True, save_rate=-1, labeler=None):
   print(name)
   train, test = load_dataset(folder)
 
   scaler = StandardScaler()
-  labeler = LabelEncoder()
+  if labeler is None:
+    labeler = LabelEncoder()
   X, y = prepare_dataset(scaler, labeler, train)
   X_test, y_test = prepare_dataset(scaler, labeler, test)
 
