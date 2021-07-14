@@ -137,9 +137,9 @@ class ModelRunner:
             self.accuracies.extend(a)
             self.f1_scores.extend(f)
             self.parent_accuracies.extend(p)
+            self.last_saved += n_trials
             with open(self.save_folder + '/' + self.name + ".pickle", 'wb+') as pickle_file:
                 pickle.dump(self, pickle_file, protocol=pickle.HIGHEST_PROTOCOL)
-            self.last_saved += n_trials
             print("CHECKPOINT END")
 
         self.get_results()
