@@ -17,7 +17,9 @@ def load_dataset(folder):
 
 
 def separate_variables(dataset):
-  return dataset.pop("genre"), dataset
+  y = dataset.pop("genre")
+  X = dataset
+  return X, y
 
 
 def prepare_dataset(scaler, labeler, X, y):
@@ -32,7 +34,7 @@ def bootstrap_trials(base_model, n_trials, X, y, verbose=True):
   start_time = datetime.datetime.now()
   for i in range(n_trials):
     trial_start = datetime.datetime.now()
-    trial_X, trial_y = resample(X, y, random_state=code+i)
+    trial_X, trial_y = resample(X, y)
     model = copy.deepcopy(base_model)
     model.fit(trial_X, trial_y)
     if verbose: print("\rTrial:", i + 1, "Time:", str(datetime.datetime.now() - trial_start), "Total:", str(datetime.datetime.now() - start_time), end='')
@@ -95,7 +97,7 @@ def get_CIs(scores, CONFIDENCE=95):
     
     
 class ModelRunner:
-    def __init__(base_model, trials, name, data_folder, indicators, save_folder, labeler=None):
+    def __init__(self, base_model, trials, name, data_folder, indicators, save_folder, labeler=None):
         self.base_model = base_model
         self.trials = trials
         self.last_saved = 0
@@ -111,38 +113,45 @@ class ModelRunner:
         self.f1_scores = []
         self.parent_accuracies = []
     
-    def run_models(verbose=True,save_rate=-1):
+
+    def run_models(self, verbose=True,save_rate=-1):
         print(self.name)
         
         train, test = load_dataset(self.data_folder)
         X, y = separate_variables(train)
         scaler = StandardScaler()
         scaler.fit(X)
-        if labeler is None:
-            labeler = LabelEncoder()
-            labeler.fit(y)
-        X, y = prepare_dataset(scaler, labeler, X, y)
+        if self.labeler is None:
+            self.labeler = LabelEncoder()
+            self.labeler.fit(y)
+        X, y = prepare_dataset(scaler, self.labeler, X, y)
         X_test, y_test = separate_variables(test)
-        X_test, y_test = prepare_dataset(scaler, labeler, X_test_, y_test)
+        X_test, y_test = prepare_dataset(scaler, self.labeler, X_test, y_test)
         
         if save_rate < 0: save_rate = trials
         while self.last_saved < self.trials:
+            print("CHECKPOINT START")
             models = bootstrap_trials(self.base_model, min(self.trials-self.last_saved, save_rate), X, y, verbose)
-            a, f, p = evaluate_models(models, name, X_test, y_test, indicators)
+            a, f, p = evaluate_models(models, name, X_test, y_test, self.indicators)
             self.accuracies.extend(a)
             self.f1_scores.extend(f)
             self.parent_accuracies.extend(p)
-            with open(save_folder + '/' + name, 'wb+') as file:
-                pickle.dump(self, file, protocol=pickle.HIGHEST_PROTOCOL)
-         
-        lo_acc, mid_acc, hi_acc = get_CIs(self.accuracies)
-        lo_f1, mid_f1, hi_f1 = get_CIs(self.f1_scores)
-        lo_p, mid_p, hi_p = get_CIs(self.parent_accuracies)
-        print("\tACCURACY:", f'{lo_acc*100:.3f} - {mid_acc*100:.3f} - {hi_acc*100:.3f}%')
-        print("\tF1 SCORES:", f'{lo_f1*100:.3f} - {mid_f1*100:.3f} - {hi_f1*100:.3f}%')
-        print("\tPARENT ACCURACIES:", f'{lo_p*100:.3f} - {mid_p*100:.3f} - {hi_p*100:.3f}%')
+            with open(save_folder + '/' + name, 'wb+') as pickle_file:
+                pickle.dump(self, pickle_file, protocol=pickle.HIGHEST_PROTOCOL)
+            print("CHECKPOINT END")
+
+        get_results()
+
+
+    def get_results():
+      lo_acc, mid_acc, hi_acc = get_CIs(self.accuracies)
+      lo_f1, mid_f1, hi_f1 = get_CIs(self.f1_scores)
+      lo_p, mid_p, hi_p = get_CIs(self.parent_accuracies)
+      print("\tACCURACY:", f'{lo_acc*100:.3f} - {mid_acc*100:.3f} - {hi_acc*100:.3f}%')
+      print("\tF1 SCORES:", f'{lo_f1*100:.3f} - {mid_f1*100:.3f} - {hi_f1*100:.3f}%')
+      print("\tPARENT ACCURACIES:", f'{lo_p*100:.3f} - {mid_p*100:.3f} - {hi_p*100:.3f}%')
 
 
 def load_model_runner(save_folder, name):
-    with open(save_folder + '/' + name, 'rb') as file:
-        return pickle.load(file)
+    with open(save_folder + '/' + name, 'rb') as pickle_file:
+        return pickle.load(pickle_file)
