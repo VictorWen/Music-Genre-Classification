@@ -128,30 +128,32 @@ class ModelRunner:
         X_test, y_test = separate_variables(test)
         X_test, y_test = prepare_dataset(scaler, self.labeler, X_test, y_test)
         
-        if save_rate < 0: save_rate = trials
+        if save_rate < 0: save_rate = self.trials
         while self.last_saved < self.trials:
             print("CHECKPOINT START")
-            models = bootstrap_trials(self.base_model, min(self.trials-self.last_saved, save_rate), X, y, verbose)
-            a, f, p = evaluate_models(models, name, X_test, y_test, self.indicators)
+            n_trials = min(self.trials-self.last_saved, save_rate)
+            models = bootstrap_trials(self.base_model, n_trials, X, y, verbose)
+            a, f, p = evaluate_models(models, self.name, X_test, y_test, self.indicators)
             self.accuracies.extend(a)
             self.f1_scores.extend(f)
             self.parent_accuracies.extend(p)
-            with open(save_folder + '/' + name, 'wb+') as pickle_file:
+            with open(self.save_folder + '/' + self.name + ".pickle", 'wb+') as pickle_file:
                 pickle.dump(self, pickle_file, protocol=pickle.HIGHEST_PROTOCOL)
+            self.last_saved += n_trials
             print("CHECKPOINT END")
 
         get_results()
 
 
-    def get_results():
+    def get_results(self):
       lo_acc, mid_acc, hi_acc = get_CIs(self.accuracies)
       lo_f1, mid_f1, hi_f1 = get_CIs(self.f1_scores)
       lo_p, mid_p, hi_p = get_CIs(self.parent_accuracies)
-      print("\tACCURACY:", f'{lo_acc*100:.3f} - {mid_acc*100:.3f} - {hi_acc*100:.3f}%')
-      print("\tF1 SCORES:", f'{lo_f1*100:.3f} - {mid_f1*100:.3f} - {hi_f1*100:.3f}%')
-      print("\tPARENT ACCURACIES:", f'{lo_p*100:.3f} - {mid_p*100:.3f} - {hi_p*100:.3f}%')
+      print("ACCURACY:", f'{lo_acc*100:.3f} - {mid_acc*100:.3f} - {hi_acc*100:.3f}%')
+      print("F1 SCORES:", f'{lo_f1*100:.3f} - {mid_f1*100:.3f} - {hi_f1*100:.3f}%')
+      print("PARENT ACCURACIES:", f'{lo_p*100:.3f} - {mid_p*100:.3f} - {hi_p*100:.3f}%')
 
 
 def load_model_runner(save_folder, name):
-    with open(save_folder + '/' + name, 'rb') as pickle_file:
+    with open(save_folder + '/' + name + ".pickle", 'rb') as pickle_file:
         return pickle.load(pickle_file)
