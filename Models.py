@@ -57,7 +57,7 @@ class HierarchicalClassifier:
                         predict.append(self.algorithms[j].predict([X[i]]))
                     elif len(self.indicators[j]) == 1:
                         predict.append(self.indicators[j])
-        return predict
+        return np.array(predict)
 
 
 def apply_selection(X, selection, scale = True):
