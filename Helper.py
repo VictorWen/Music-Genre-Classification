@@ -130,7 +130,7 @@ class ModelRunner:
         
         if save_rate < 0: save_rate = self.trials
         while self.last_saved < self.trials:
-            print("CHECKPOINT START")
+            print("CHECKPOINT START", self.last_saved, "/", self.trials)
             n_trials = min(self.trials-self.last_saved, save_rate)
             models = bootstrap_trials(self.base_model, n_trials, X, y, verbose)
             a, f, p = evaluate_models(models, self.name, X_test, y_test, self.indicators)
@@ -142,7 +142,7 @@ class ModelRunner:
             self.last_saved += n_trials
             print("CHECKPOINT END")
 
-        get_results()
+        self.get_results()
 
 
     def get_results(self):
