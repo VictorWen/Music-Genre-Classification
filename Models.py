@@ -34,14 +34,14 @@ class HierarchicalClassifier:
             self.algorithms.append(copy.deepcopy(base_algorithm))
         self.parent_algorithm = copy.deepcopy(base_algorithm)
     
-    def fit(self, X, y):
+    def fit(self, X, y, **fit_params):
         parent_y, child_y, child_X = hierarchical_taxonomy(X, y, self.indicators, labels = self.labels)
         self.parent_algorithm.fit(X, parent_y)
         if self.cv:
             self.parent_algorithm = self.parent_algorithm.best_estimator_
         for i in range(self.roots):
             if len(self.indicators[i]) > 1:
-                self.algorithms[i].fit(child_X[i], child_y[i])
+                self.algorithms[i].fit(child_X[i], child_y[i], **fit_params)
                 if self.cv:
                     self.algorithms[i] = self.algorithms[i].best_estimator_
             
