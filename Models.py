@@ -36,7 +36,7 @@ class HierarchicalClassifier:
     
     def fit(self, X, y, **fit_params):
         parent_y, child_y, child_X = hierarchical_taxonomy(X, y, self.indicators, labels = self.labels)
-        self.parent_algorithm.fit(X, parent_y)
+        self.parent_algorithm.fit(X, parent_y, **fit_params)
         if self.cv:
             self.parent_algorithm = self.parent_algorithm.best_estimator_
         for i in range(self.roots):
