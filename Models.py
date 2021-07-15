@@ -60,35 +60,38 @@ class HierarchicalClassifier:
         return np.array(predict)
 
 
-def apply_selection(X, selection, scale = True):
-    selected = []
-    if scale:
-        ss = StandardScaler()
-    for features in selection:
-        if scale:
-            selected.append(ss.fit_transform(X[features]))
-        else:
-            selected.append(X[features])
-    return selected
+class mRMRWrapper(BaseEstimator):
+    def __init__(self, base_model, k=0.5):
+        self.base_model = base_model
+        self.k = k
 
+    def fit(self, X, y):
+        means = X.mean(axis=0)
+        stds = X.std(axis=0)
+        lower = means - (stds * self.k)
+        upper = means + (stds * self.k)
+        below = X < lower
+        above = X > upper
+        discrete_features = np.select([below, above], [-1, 1], default = 0)
+        n = X.shape[1]
+        discrete_features = pd.DataFrame(discrete_features, columns = [str(i) for i in range(n)])
+        self.selected_features = pymrmr.mRMR(discrete_features, 'MIQ', n)
+        self.selected_features = [int(i) for i in self.selected_features]
+        self.model = copy.deepcopy(self.base_model)
+        self.model.fit(X, y, groups=None, selected=self.selected_features)
+        return self
 
-class MultiCV:
+    def predict(self, X):
+        return self.model.predict(X)
+
     
-    def __init__(self, base_cv, multi, refitted = True):
-        self.models = []
-        self.refitted = refitted
-        for i in range(multi):
-            self.models.append(copy.deepcopy(base_cv))
-            
-    def fit(self, Xs, y):
-        for i, model in enumerate(self.models):
-            model.fit(Xs[i], y)
-            print(str(i + 1) + " " + str(datetime.datetime.now()))
-            if self.refitted:
-                self.models[i] = model.best_estimator_
-            
-    def predict(self, Xs):
-        predictions = []
-        for i, model in enumerate(self.models):
-            predictions.append(model.predict(Xs[i]))
-        return predictions
+class featureSelectionTransformer:
+    def __init__(self, n_features=1):
+        self.n_features = n_features
+    def fit(self, X, y, selected):
+        self.selected_features = selected[:self.n_features]
+        return self
+
+    def transform(self, X):
+        selected_X = X[:, self.selected_features]
+        return selected_X
