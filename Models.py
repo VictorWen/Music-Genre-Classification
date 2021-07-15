@@ -80,7 +80,7 @@ class mRMRWrapper(BaseEstimator):
         self.selected_features = pymrmr.mRMR(discrete_features, 'MIQ', n)
         self.selected_features = [int(i) for i in self.selected_features]
         self.model = copy.deepcopy(self.base_model)
-        self.model.fit(X, y, groups=None, selected=self.selected_features)
+        self.model.fit(X, y, selector__selected=self.selected_features) # oddly assumes a pipline
         return self
 
     def predict(self, X):
