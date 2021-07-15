@@ -87,7 +87,7 @@ class mRMRWrapper(BaseEstimator):
         return self.model.predict(X)
 
     
-class featureSelectionTransformer:
+class featureSelectionTransformer(BaseEstimator):
     def __init__(self, n_features=1):
         self.n_features = n_features
     def fit(self, X, y, selected):
