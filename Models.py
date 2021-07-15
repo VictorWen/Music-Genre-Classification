@@ -4,6 +4,7 @@ import datetime
 import copy
 import pandas as pd
 from sklearn.base import BaseEstimator
+import pymrmr
 
 def hierarchical_taxonomy(X, y, indicators, labels = None):
     if labels == None:
