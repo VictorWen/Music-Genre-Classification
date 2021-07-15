@@ -56,7 +56,7 @@ class HierarchicalClassifier:
             for j in range(self.roots):
                 if parent_predict[i] == self.labels[j]:
                     if len(self.indicators[j]) > 1:
-                        predict.append(self.algorithms[j].predict([X[i]]))
+                        predict.append(self.algorithms[j].predict(np.array([X[i]])))
                     elif len(self.indicators[j]) == 1:
                         predict.append(self.indicators[j])
         return np.array(predict)
