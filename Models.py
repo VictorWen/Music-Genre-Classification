@@ -2,7 +2,8 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import datetime
 import copy
-
+import pandas as pd
+from sklearn.base import BaseEstimator
 
 def hierarchical_taxonomy(X, y, indicators, labels = None):
     if labels == None:
