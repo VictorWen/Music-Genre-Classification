@@ -28,15 +28,18 @@ def prepare_dataset(scaler, labeler, X, y):
     return X, y
 
 
-def bootstrap_trials(base_model, n_trials, X, y, verbose=True):
+def bootstrap_trials(base_model, n_trials, X, y, verbose=True, feature_table=None, random_start = None):
     models = []
 
     start_time = datetime.datetime.now()
     for i in range(n_trials):
         trial_start = datetime.datetime.now()
-        trial_X, trial_y = resample(X, y)
+        trial_X, trial_y = resample(X, y, random_state=None if random_start is None else random_start + i)
         model = copy.deepcopy(base_model)
-        model.fit(trial_X, trial_y)
+        if feature_table is not None:
+            model.fit(trial_X, trial_y, selector__selected=feature_table[i]
+        else:
+            model.fit(trial_X, trial_y)
         if verbose: print("\rTrial:", i + 1, "Time:", str(datetime.datetime.now() - trial_start), "Total:", str(datetime.datetime.now() - start_time), end='')
         models.append(model)
     if verbose: print("\nElapsed Time:", str(datetime.datetime.now() - start_time))
@@ -97,7 +100,7 @@ def get_CIs(scores, CONFIDENCE=95):
     
     
 class ModelRunner:
-    def __init__(self, base_model, trials, name, data_folder, indicators, save_folder, labeler=None):
+    def __init__(self, base_model, trials, name, data_folder, indicators, save_folder, labeler=None, feature_table=None, random_start=None):
         self.base_model = base_model
         self.trials = trials
         self.last_saved = 0
@@ -108,6 +111,8 @@ class ModelRunner:
         if labeler is None:
             labeler = LabelEncoder()
         self.labeler = labeler
+        self.feature_table = feature_table
+        self.random_start = random_start
      
         self.accuracies = []
         self.f1_scores = []
@@ -132,7 +137,7 @@ class ModelRunner:
         while self.last_saved < self.trials:
             print("CHECKPOINT START", self.last_saved, "/", self.trials)
             n_trials = min(self.trials-self.last_saved, save_rate)
-            models = bootstrap_trials(self.base_model, n_trials, X, y, verbose)
+            models = bootstrap_trials(self.base_model, n_trials, X, y, verbose=verbose, feature_table=self.feature_table, random_start=self.random_start)
             a, f, p = evaluate_models(models, self.name, X_test, y_test, self.indicators)
             self.accuracies.extend(a)
             self.f1_scores.extend(f)
