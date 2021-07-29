@@ -137,7 +137,7 @@ class ModelRunner:
         while self.last_saved < self.trials:
             print("CHECKPOINT START", self.last_saved, "/", self.trials)
             n_trials = min(self.trials-self.last_saved, save_rate)
-            models = bootstrap_trials(self.base_model, n_trials, X, y, verbose=verbose, feature_table=self.feature_table, random_start=self.random_start)
+            models = bootstrap_trials(self.base_model, n_trials, X, y, verbose=verbose, feature_table=self.feature_table, random_start=None if self.random_start is None else self.random_start + self.last_saved)
             a, f, p = evaluate_models(models, self.name, X_test, y_test, self.indicators)
             self.accuracies.extend(a)
             self.f1_scores.extend(f)
