@@ -97,3 +97,43 @@ class featureSelectionTransformer(BaseEstimator):
     def transform(self, X):
         selected_X = X[:, self.selected_features]
         return selected_X
+
+class mRMRFeatureExtractor:
+  def __init__(self, name, n_runs, random_start, save_folder, k = 0.5):
+    self.count = 0
+    self.name = name
+    self.n_runs = n_runs
+    self.random_start = random_start
+    self.save_folder = save_folder
+    self.k = k
+    self.selected_features_table = []
+
+  
+  def fit(self, X, y):
+    start_time = datetime.datetime.now()
+    while self.count < self.n_runs:
+      trial_X, trial_y = resample(X, y, random_state=self.random_start + self.count)
+      
+      means = trial_X.mean(axis=0)
+      stds = trial_X.std(axis=0)
+      
+      lower = means - (stds * self.k)
+      upper = means + (stds * self.k)
+      
+      below = trial_X < lower
+      above = trial_X > upper
+      
+      discrete_features = np.select([below, above], [-1, 1], default = 0)
+      n = trial_X.shape[1]
+      
+      discrete_features = pd.DataFrame(discrete_features, columns = [str(i) for i in range(n)])
+      
+      trial_start = datetime.datetime.now()
+      selected_features = pymrmr.mRMR(discrete_features, 'MIQ', n)
+      print("\rTrial:", self.count + 1, "Time:", str(datetime.datetime.now() - trial_start), "Total:", str(datetime.datetime.now() - start_time), end='')
+      
+      self.selected_features_table.append([int(i) for i in selected_features])
+      
+      with open(self.save_folder + '/' + self.name + ".pickle", 'wb+') as pickle_file:
+        pickle.dump(self, pickle_file, protocol=pickle.HIGHEST_PROTOCOL)
+      self.count += 1
