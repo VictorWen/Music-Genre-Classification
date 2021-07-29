@@ -134,6 +134,6 @@ class mRMRFeatureExtractor:
       
       self.selected_features_table.append([int(i) for i in selected_features])
       
+      self.count += 1
       with open(self.save_folder + '/' + self.name + ".pickle", 'wb+') as pickle_file:
         pickle.dump(self, pickle_file, protocol=pickle.HIGHEST_PROTOCOL)
-      self.count += 1
