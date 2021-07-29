@@ -37,7 +37,7 @@ def bootstrap_trials(base_model, n_trials, X, y, verbose=True, feature_table=Non
         trial_X, trial_y = resample(X, y, random_state=None if random_start is None else random_start + i)
         model = copy.deepcopy(base_model)
         if feature_table is not None:
-            model.fit(trial_X, trial_y, selector__selected=feature_table[i]
+            model.fit(trial_X, trial_y, selector__selected=feature_table[i])
         else:
             model.fit(trial_X, trial_y)
         if verbose: print("\rTrial:", i + 1, "Time:", str(datetime.datetime.now() - trial_start), "Total:", str(datetime.datetime.now() - start_time), end='')
