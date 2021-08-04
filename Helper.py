@@ -37,7 +37,7 @@ def bootstrap_trials(base_model, n_trials, X, y, verbose=True, feature_table=Non
         trial_X, trial_y = resample(X, y, random_state=None if random_start is None else random_start + i)
         model = copy.deepcopy(base_model)
         if feature_table is not None:
-            model.fit(trial_X, trial_y, selector__selected=feature_table[i if random_start is None else random_start + i])
+            model.fit(trial_X, trial_y, selector__selected=feature_table[i])
         else:
             model.fit(trial_X, trial_y)
         if verbose: print("\rTrial:", i + 1, "Time:", str(datetime.datetime.now() - trial_start), "Total:", str(datetime.datetime.now() - start_time), end='')
@@ -137,7 +137,7 @@ class ModelRunner:
         while self.last_saved < self.trials:
             print("CHECKPOINT START", self.last_saved, "/", self.trials)
             n_trials = min(self.trials-self.last_saved, save_rate)
-            models = bootstrap_trials(self.base_model, n_trials, X, y, verbose=verbose, feature_table=self.feature_table, random_start=None if self.random_start is None else self.random_start + self.last_saved)
+            models = bootstrap_trials(self.base_model, n_trials, X, y, verbose=verbose, feature_table=None if self.feature_table is None else self.feature_table[self.last_saved:self.last_saved+n_trials], random_start=None if self.random_start is None else self.random_start + self.last_saved)
             a, f, p = evaluate_models(models, self.name, X_test, y_test, self.indicators)
             self.accuracies.extend(a)
             self.f1_scores.extend(f)
